@@ -129,10 +129,6 @@
 <!--    </nav>-->
 </header>
 
-<!--flex-shrink-0 : 찌그러짐 방지 -->
-<main class="flex-shrink-0 pt-5 mt-3">
-    <div class="container" layout:fragment="content">
-        <p>페이지 콘텐츠 부분이고, 동적으로 교체될 예정</p>
 <!-- 사이드바 오버레이 -->
 <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
@@ -211,14 +207,71 @@
         <span class="text-muted">Place sticky footer content here.</span>
     </div>
 </footer>
-<!--    우리가 만든 css, js 를 불러오는 코드가 필요함, 타임리프 태그를 이용해서, 링크 설정. -->
+
 <script th:src="@{/js/script.js}"></script>
-<!--다른 html 파일에서, 부트스트랩의 js 로드를 늦게 해서, 인식을 못하는 문제가 발생해서, 순서 위치를 교체-->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
         crossorigin="anonymous"></script>
 
-    // 헤더 링크 클릭 시 텍스트를 localStorage에 저장 + 클릭 카운터
+<script>
+    const spans = document.querySelectorAll('.spanTap');
+    const contents = document.querySelectorAll('.header-inner');
+
+    function activate(index) {
+        spans[index].classList.add('spanTap-active');
+        contents[index].classList.add('header-inner-active');
+    }
+
+    function deactivate(index) {
+        spans[index].classList.remove('spanTap-active');
+        contents[index].classList.remove('header-inner-active');
+    }
+
+    spans.forEach(span => {
+        const i = span.dataset.index;
+        span.addEventListener('mouseenter', () => activate(i));
+        span.addEventListener('mouseleave', () => deactivate(i));
+    });
+
+    contents.forEach(content => {
+        const i = content.dataset.index;
+        content.addEventListener('mouseenter', () => activate(i));
+        content.addEventListener('mouseleave', () => deactivate(i));
+    });
+
+    // 사이드바
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+
+    document.getElementById('hamburgerBtn').addEventListener('click', () => {
+        sidebar.classList.add('open');
+        overlay.classList.add('open');
+    });
+
+    document.getElementById('sidebarClose').addEventListener('click', () => {
+        sidebar.classList.remove('open');
+        overlay.classList.remove('open');
+    });
+
+    overlay.addEventListener('click', () => {
+        sidebar.classList.remove('open');
+        overlay.classList.remove('open');
+    });
+
+    window.addEventListener('resize', () => {
+        if (window.innerWidth > 1024) {
+            sidebar.style.transition = 'none';
+            overlay.style.transition = 'none';
+            sidebar.classList.remove('open');
+            overlay.classList.remove('open');
+            setTimeout(() => {
+                sidebar.style.transition = '';
+                overlay.style.transition = '';
+            }, 0);
+        }
+    });
+
+    // 헤더 링크 클릭 시 텍스트를 localStorage에 저장
     document.querySelectorAll('.header-inner a, .sidebar-sub a').forEach(a => {
         a.addEventListener('click', function () {
             localStorage.setItem('pageTitle', this.textContent);
@@ -227,7 +280,8 @@
 
     document.querySelector('#header-logo').addEventListener('click', function () {
         localStorage.setItem('pageTitle', "");
-    })
+    });
+
     // 페이지 로드 시 저장된 타이틀 표시
     const savedTitle = localStorage.getItem('pageTitle') || '';
     const pageTitleEl = document.getElementById('page-title');
