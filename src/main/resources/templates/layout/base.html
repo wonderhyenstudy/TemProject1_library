@@ -12,6 +12,9 @@
 <body class="d-flex flex-column h-100">
 
 <header>
+    <a href="/" id="header-logo">
+        <img src="/images/페페1.jpg" alt="로고" style="width:40px; height:40px; border-radius:8px; cursor:pointer;">
+    </a>
     <button class="hamburger" id="hamburgerBtn">&#9776;</button>
     <ul class="header-nav">
         <li class="header-nav-item">
@@ -34,8 +37,8 @@
         </li>
         <div class="header-nav-content d-flex">
             <ul class="header-inner list-unstyled d-flex flex-column gap-4 col-2" data-index="0">
-                <li><a href="#">항목 1</a></li>
-                <li><a href="#">항목 2</a></li>
+                <li><a href="/book/booklist">책 검색</a></li>
+                <li><a href="/book/booklist">항목 2</a></li>
                 <li><a href="#">항목 3</a></li>
                 <li><a href="#">항목 4</a></li>
             </ul>
@@ -135,6 +138,9 @@
     </ul>
 </nav>
 
+<div id="page-title" class="d-none d-flex align-items-center justify-content-center fw-bold fs-4">
+</div>
+
 <!-- 페이지별 컨텐츠 -->
 <main class="flex-shrink-0 pt-4">
     <div class="container-fluid" layout:fragment="content">
@@ -229,6 +235,24 @@
             }, 0);
         }
     });
+
+    // 헤더 링크 클릭 시 텍스트를 localStorage에 저장 + 클릭 카운터
+    document.querySelectorAll('.header-inner a, .sidebar-sub a').forEach(a => {
+        a.addEventListener('click', function () {
+            localStorage.setItem('pageTitle', this.textContent);
+        });
+    });
+
+    document.querySelector('#header-logo').addEventListener('click', function () {
+        localStorage.setItem('pageTitle', "");
+    })
+    // 페이지 로드 시 저장된 타이틀 표시
+    const savedTitle = localStorage.getItem('pageTitle') || '';
+    const pageTitleEl = document.getElementById('page-title');
+    pageTitleEl.textContent = savedTitle;
+    if (savedTitle) {
+        pageTitleEl.classList.remove('d-none');
+    }
 
     // 사이드바 아코디언
     document.querySelectorAll('.sidebar-tap').forEach(tap => {
