@@ -1,7 +1,6 @@
 package com.library.project.library.entity;
 
 import com.library.project.library.enums.BookStatus;
-import com.library.project.library.enums.RentalStatus;
 import jakarta.persistence.*;
 import lombok.*;
 
