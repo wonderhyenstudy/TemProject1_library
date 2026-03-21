@@ -6,9 +6,11 @@ import com.library.project.library.dto.BookDTO;
 import com.library.project.library.dto.PageRequestDTO;
 import com.library.project.library.dto.PageResponseDTO;
 import com.library.project.library.entity.Book;
+import com.library.project.library.entity.Member;
 import com.library.project.library.entity.Recommend;
 import com.library.project.library.enums.BookStatus;
 import com.library.project.library.repository.BookRepository;
+import com.library.project.library.repository.MemberRepository;
 import com.library.project.library.repository.RecommendRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -31,9 +33,10 @@ public class BookServiceImpl implements BookService {
     private final RecommendRepository recommendRepository;
     private final ModelMapper modelMapper;
     private final KoreanDecomposer koreanDecomposer;
+    private final MemberRepository memberRepository;
 
     @Override
-    public PageResponseDTO<BookDTO> list(PageRequestDTO pageRequestDTO) {
+    public PageResponseDTO<BookDTO> list(PageRequestDTO pageRequestDTO, Long memberId) {
         String keyword = pageRequestDTO.getKeyword();
 
         // 한글 검색 지원을 위해 검색어를 두 가지 형태로 변환
@@ -66,8 +69,8 @@ public class BookServiceImpl implements BookService {
                 : new HashSet<>(bookRepository.findAvailableIsbnIn(isbns, BookStatus.AVAILABLE));   //isbn이 있으면 빌릴수 있는 책있는지 찾아서 중복 제거해서 넣어줌
 
         // bookId 목록 중 추천 기록이 있는 bookId만 Set으로 저장
-        Set<Long> recommendedBookIds = bookIds.isEmpty() ? new HashSet<>()
-                : new HashSet<>(recommendRepository.findBookIdsByBookIdIn(bookIds));    //id가 있으면 추천한 책을 찾는다. 중복 제거 해서
+        Set<Long> recommendedBookIds = (bookIds.isEmpty() || memberId == null) ? new HashSet<>()
+                : new HashSet<>(recommendRepository.findBookIdsByBookIdIn(bookIds, memberId));    //id가 있으면 추천한 책을 찾는다. 중복 제거 해서
 
         // ── Book → BookDTO 변환 ────────────────────────────────────────────────
         List<BookDTO> dtoList = books.stream()
@@ -83,7 +86,7 @@ public class BookServiceImpl implements BookService {
 
                     // 추천 여부: 이 bookId에 추천 기록이 있으면 true
                     // → 프론트에서 추천 버튼 초기 상태(♥ 추천됨 / ♡ 추천하기) 결정에 사용
-                    dto.setRecommended(recommendedBookIds.contains(book.getId()));
+                    dto.setRecommended(memberId != null ? recommendedBookIds.contains(book.getId()) : null);
 
                     return dto;
                 })
@@ -103,30 +106,31 @@ public class BookServiceImpl implements BookService {
 
     // 책 단건 조회 (모달 상세정보용)
     @Override
-    public BookDTO getBook(Long bookId) {
+    public BookDTO getBook(Long bookId, Long memberId) {
         Book book = bookRepository.findById(bookId).orElseThrow();
         BookDTO dto = modelMapper.map(book, BookDTO.class);
         dto.setStatus(bookRepository.existsByIsbnAndStatus(book.getIsbn(), BookStatus.AVAILABLE)
                 ? BookStatus.AVAILABLE
                 : BookStatus.RENTED);
-        dto.setRecommended(recommendRepository.existsByBook_Id(book.getId()));
+        dto.setRecommended(memberId != null ? recommendRepository.existsByBook_IdAndMember_Id(book.getId(), memberId) : null);
         return dto;
     }
 
     // 추천하기: RecommendHistory에 row 추가
     // bookId는 isbn 대표 row(min id)의 id
     @Override
-    public void recommend(Long bookId) {
+    public void recommend(Long bookId, Long memberId) {
         Book book = bookRepository.findById(bookId).orElseThrow();
-        recommendRepository.save(Recommend.builder().book(book).build());
+        Member member = memberRepository.findById(memberId).orElseThrow();
+        recommendRepository.save(Recommend.builder().book(book).member(member).build());
     }
 
     // 추천 해제: RecommendHistory에서 해당 bookId row 삭제
     // deleteBy~ 메서드는 @Transactional 필수
     @Override
     @Transactional
-    public void unrecommend(Long bookId) {
-        recommendRepository.deleteByBook_Id(bookId);
+    public void unrecommend(Long bookId, Long memberId) {
+        recommendRepository.deleteByBook_IdAndMember_Id(bookId, memberId);
     }
 
 

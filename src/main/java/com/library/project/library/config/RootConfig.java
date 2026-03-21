@@ -36,11 +36,6 @@ public class RootConfig {
 
         return mapper;
     }*/
-
-    @Bean
-    public KoreanDecomposer koreanDecomposer() {
-        return new KoreanDecomposer();
-    }
 }
 
 /*

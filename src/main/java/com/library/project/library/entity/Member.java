@@ -3,12 +3,15 @@ package com.library.project.library.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Entity
 @Getter
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-@ToString
+@ToString(exclude = {"recommends"})
 public class Member extends BaseEntity {
 
     @Id
@@ -35,6 +38,10 @@ public class Member extends BaseEntity {
     }
 
     // 눈에 보이지 않지만, BaseEntity를 이용해서, regDate, modDate 도 추가가 될 예정.
+    // 📌 연관관계 - 회원 삭제 시 추천 기록도 자동 삭제
+    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<Recommend> recommends = new ArrayList<>();
 
     // 정보 수정 메서드 (내 서재/마이페이지용)
     public void change(String mname, String email, String region, String mpw) {
@@ -63,6 +70,7 @@ public class Member extends BaseEntity {
  * - region: 지역
  * - role: 권한 (USER / ADMIN)
  * - regDate, modDate: BaseEntity 상속 (생성일, 수정일)
+ * - recommends: 이 회원의 추천 기록 목록 (OneToMany, 양방향) - 회원 삭제 시 추천 기록도 자동 삭제 (cascade + orphanRemoval)
  *
  * [메서드]
  * - change(): 회원 정보 수정 (마이페이지에서 이름/이메일/지역/비밀번호 변경 시 호출)

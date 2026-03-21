@@ -5,7 +5,7 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ModelAttribute;
 
 @ControllerAdvice
-public class GlobalModelAdvice {
+public class GlobalURIHandler {
 
     @ModelAttribute("currentURI")
     public String currentURI(HttpServletRequest request) {

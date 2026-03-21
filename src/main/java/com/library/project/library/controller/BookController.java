@@ -1,9 +1,12 @@
 package com.library.project.library.controller;
 
+import com.library.project.library.config.SessionHelper;
 import com.library.project.library.dto.BookDTO;
+import com.library.project.library.dto.MemberDTO;
 import com.library.project.library.dto.PageRequestDTO;
 import com.library.project.library.dto.PageResponseDTO;
 import com.library.project.library.service.BookService;
+import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Controller;
@@ -17,10 +20,14 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 public class BookController {
 
     private final BookService bookService;
+    private final SessionHelper sessionHelper;
 
     @GetMapping("/book/booklist")
-    public void list(PageRequestDTO pageRequestDTO, Model model) {
-        PageResponseDTO<BookDTO> responseDTO = bookService.list(pageRequestDTO);
+    public void list(PageRequestDTO pageRequestDTO, Model model, HttpSession session) {
+        MemberDTO memberInfo = sessionHelper.getMemberInfo(session);
+        PageResponseDTO<BookDTO> responseDTO = bookService.list(
+                pageRequestDTO
+                , memberInfo == null ? null : memberInfo.getId());
         model.addAttribute("responseDTO", responseDTO);
     }
 }

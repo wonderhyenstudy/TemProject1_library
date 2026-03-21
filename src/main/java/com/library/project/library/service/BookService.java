@@ -8,10 +8,10 @@ import com.library.project.library.dto.PageResponseDTO;
 public interface BookService {
     // void printApiResponse();
     // boolean isReady();
-    PageResponseDTO<BookDTO> list(PageRequestDTO pageRequestDTO);
-    BookDTO getBook(Long bookId);
-    void recommend(Long bookId);
-    void unrecommend(Long bookId);
+    PageResponseDTO<BookDTO> list(PageRequestDTO pageRequestDTO, Long memberId);
+    BookDTO getBook(Long bookId, Long memberId);
+    void recommend(Long bookId, Long memberId);
+    void unrecommend(Long bookId, Long memberId);
 }
 
 /*

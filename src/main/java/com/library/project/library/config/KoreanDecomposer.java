@@ -1,5 +1,8 @@
 package com.library.project.library.config;
 
+import org.springframework.stereotype.Component;
+
+@Component
 public class KoreanDecomposer {
 
     private static final char[] CHOSUNG = {

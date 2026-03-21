@@ -15,7 +15,7 @@ import java.util.List;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-@ToString
+@ToString(exclude = {"rentals", "recommends"})
 public class Book extends BaseEntity {
 
     @Id
@@ -60,6 +60,10 @@ public class Book extends BaseEntity {
     @Builder.Default
     private List<Rental> rentals = new ArrayList<>();
 
+    @OneToMany(mappedBy = "book", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<Recommend> recommends = new ArrayList<>();
+
     // 대여/반납 처리 시 status 변경용 메서드
 // 대여 시: AVAILABLE → RENTED
 // 반납 시: RENTED → AVAILABLE
@@ -100,6 +104,7 @@ public class Book extends BaseEntity {
  * - bookTitleChosung: 초성만 추출한 제목 (초성 검색용)
  * - status: 대여 상태 (AVAILABLE / RENTED)
  * - rentals: 이 책의 대여 이력 목록 (OneToMany)
+ * - recommends: 이 책의 추천 기록 목록 (OneToMany, 양방향) - 책 삭제 시 추천 기록도 자동 삭제 (cascade + orphanRemoval)
  *
  * [메서드]
  * - setStatus(): 대여/반납 시 status 변경 (BookController, RentalService에서 호출)

@@ -27,7 +27,7 @@ public class BookDTO {
     private String bookTitleNormal;
     private String bookTitleChosung;
     private BookStatus status;
-    private boolean recommended;
+    private Boolean recommended;
     @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDateTime regDate;
     @JsonFormat(pattern = "yyyy-MM-dd")
