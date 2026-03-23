@@ -155,7 +155,7 @@
         <li class="sidebar-item">
             <span class="sidebar-tap">Active</span>
             <ul class="sidebar-sub list-unstyled">
-                <li><a href="/book/booklist">책 검색</a></li>
+                <li><a href="#">항목 1</a></li>
                 <li><a href="#">항목 2</a></li>
                 <li><a href="#">항목 3</a></li>
                 <li><a href="#">항목 4</a></li>
@@ -209,9 +209,7 @@
 </nav>
 
 <th:block th:unless="${currentURI == '/'}">
-    <div id="page-title" class="d-flex align-items-center justify-content-center fw-bold fs-4" style="margin-top: 101px; height: 100px; background-color: #dc3545;"
-         th:text="${currentURI == '/member/login' ? '로그인' :
-            currentURI == '/book/booklist' ? '책 검색' : '알 수 없음'}">
+    <div id="page-title" class="d-flex align-items-center justify-content-center fw-bold fs-4" style="margin-top: 100px; height: 100px; background-color: #dc3545;">
     </div>
 </th:block>
 
