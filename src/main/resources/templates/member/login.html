@@ -56,8 +56,10 @@
 
 <script layout:fragment="script" th:inline="javascript">
     /* 컨트롤러에서 전달받는 결과/에러 메시지 처리 */
-    const result = [[${result}]];
-    const error = [[${error}]];
+    /*const result = [[${result}]];
+    const error = [[${error}]];*/
+    const result = /*[[${result}]]*/ null;
+    const error = /*[[${error}]]*/ null;
 
     // 1. 알림 메시지 통합 처리
     window.onload = function() {
