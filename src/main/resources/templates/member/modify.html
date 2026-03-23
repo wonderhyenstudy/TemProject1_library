@@ -56,8 +56,10 @@
 
                         <div class="d-grid gap-2 mt-5">
                             <button type="submit" class="btn btn-warning btn-lg fw-bold text-dark">수정 완료</button>
+                            <!--<button type="button" class="btn btn-outline-secondary"
+                                    th:onclick="|location.href='@{/member/mypage(mid=${dto.mid})}'|">취소</button>-->
                             <button type="button" class="btn btn-outline-secondary"
-                                    th:onclick="|location.href='@{/member/mypage(mid=${dto.mid})}'|">취소</button>
+                                    onclick="location.href='/member/mypage'">취소</button>
                         </div>
                     </form>
                 </div>
