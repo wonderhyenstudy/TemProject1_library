@@ -6,6 +6,7 @@ import com.library.project.library.dto.rentalDto.RentalRequestDTO;
 import com.library.project.library.entity.Book;
 import com.library.project.library.entity.BookRequest;
 import com.library.project.library.entity.Member;
+import com.library.project.library.enums.BookStatus;
 import com.library.project.library.enums.RequestStatus;
 import com.library.project.library.repository.BookRepository;
 import com.library.project.library.repository.BookRequestRepository;
@@ -90,6 +91,14 @@ public class BookRequestServiceImpl implements BookRequestService {
                 .toList();
     }
 
+    // ─────────────────────────────────────────────────────────────────
+    // 신청 승인 → 실제 대출 처리 (관리자)
+    //
+    // [핵심] 예약 시점의 book_id가 아니라, 승인 시점에 같은 isbn 중
+    //        AVAILABLE인 권을 다시 찾아서 대출 처리
+    //        → 예약은 id 2에 걸려있었어도 승인 시 id 1이 반납됐으면 id 1로 대출
+    //        → AVAILABLE인 권이 없으면 승인 불가 (반납 후 재시도)
+    // ─────────────────────────────────────────────────────────────────
     /** 신청 승인 → 실제 대출 처리 (관리자) */
     @Override
     public void approveRequest(Long requestId) {
@@ -100,13 +109,19 @@ public class BookRequestServiceImpl implements BookRequestService {
             throw new RuntimeException("이미 처리된 신청입니다.");
         }
 
+        // 승인 시점에 같은 isbn 중 AVAILABLE인 권을 찾아서 대출
+        // 예약 시점의 book_id가 RENTED 상태여도, 다른 권이 AVAILABLE이면 그걸로 대출
+        String isbn = request.getBook().getIsbn();
+        Book availableBook = bookRepository.findFirstByIsbnAndStatus(isbn, BookStatus.AVAILABLE)
+                .orElseThrow(() -> new RuntimeException("대여 가능한 권이 없습니다. 반납 후 다시 시도해주세요."));
+
         // 상태 변경
         request.setStatus(RequestStatus.APPROVED);
 
-        // 실제 대출 처리 (기존 RentalService 활용)
+        // 실제 대출 처리 (AVAILABLE인 권으로)
         RentalRequestDTO rentalDTO = RentalRequestDTO.builder()
                 .memberId(request.getMember().getId())
-                .bookId(request.getBook().getId())
+                .bookId(availableBook.getId())
                 .build();
         rentalService.rentBook(rentalDTO);
     }

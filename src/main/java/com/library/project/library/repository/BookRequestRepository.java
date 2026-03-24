@@ -37,27 +37,34 @@ public interface BookRequestRepository extends JpaRepository<BookRequest, Long> 
     List<String> findBookIsbnsByMemberIdAndBookIsbnInAndStatus(@Param("memberId")Long memberId, @Param("bookIsbns")List<String> bookIsbns, @Param("status")RequestStatus status);
 
     // ─────────────────────────────────────────────────────────────────
-    // 같은 isbn의 book_id별 PENDING 예약 수 조회 (예약 균등 배분용)
+    // 같은 isbn의 book_id별 예약 우선순위 조회 (예약 배정용)
     //
-    // [용도] BookRequestServiceImpl.requestBook()에서 예약을 균등 분산할 때 사용
+    // [용도] BookRequestServiceImpl.requestBook()에서 예약할 권을 결정할 때 사용
     //
-    // [동작 방식]
-    // 1. 같은 isbn을 가진 모든 Book row를 조회
-    // 2. 각 book_id에 걸린 PENDING 예약 수를 LEFT JOIN으로 카운트
-    // 3. 예약 수 오름차순 정렬 → 첫 번째 결과가 예약이 가장 적은 권
-    // 4. 동률이면 book_id 오름차순 (일관된 배정)
+    // [우선순위]
+    // 1순위: AVAILABLE + 예약 0건 → 바로 빌릴 수 있는 책
+    // 2순위: AVAILABLE + 예약 있음 → 빌릴 수 있지만 대기자 있는 책 (예약 적은 순)
+    // 3순위: RENTED → 반납 대기 (예약 적은 순)
+    //
+    // [정렬 방식]
+    // CASE WHEN b.status = 'AVAILABLE' THEN 0 ELSE 1 → AVAILABLE 우선
+    // COUNT(br) ASC → 예약 적은 순
+    // b.id ASC → 동률이면 낮은 id (일관된 배정)
     //
     // [결과 형식] List<Object[]> → Object[0]: book_id(Long), Object[1]: count(Long)
     //
-    // [예시] 나루토 id 1(예약 2건), id 2(예약 0건) → [{2, 0}, {1, 2}] → id 2에 배정
+    // [예시] id 1(RENTED, 예약 0건), id 2(AVAILABLE, 예약 0건) → id 2에 배정
+    //        id 1(AVAILABLE, 예약 2건), id 2(AVAILABLE, 예약 0건) → id 2에 배정
     // ─────────────────────────────────────────────────────────────────
     @Query("""
         SELECT b.id, COUNT(br)
         FROM Book b
         LEFT JOIN BookRequest br ON br.book.id = b.id AND br.status = :status
         WHERE b.isbn = :isbn
-        GROUP BY b.id
-        ORDER BY COUNT(br) ASC, b.id ASC
+        GROUP BY b.id, b.status
+        ORDER BY CASE WHEN b.status = 'AVAILABLE' THEN 0 ELSE 1 END ASC,
+                 COUNT(br) ASC,
+                 b.id ASC
     """)
     List<Object[]> countPendingPerBookByIsbn(@Param("isbn") String isbn, @Param("status") RequestStatus status);
 
