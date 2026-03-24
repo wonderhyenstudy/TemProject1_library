@@ -28,23 +28,51 @@ public class BookRequestServiceImpl implements BookRequestService {
     private final BookRepository bookRepository;
     private final RentalService rentalService; // 승인 시 대출 처리
 
+    // ─────────────────────────────────────────────────────────────────
+    // 대출 신청 (회원)
+    //
+    // [전체 흐름]
+    // 1. 프론트에서 넘어오는 bookId는 isbn 대표 row(min id)
+    //    → 해당 bookId로 isbn을 알아낸 뒤, 같은 isbn의 모든 권을 대상으로 처리
+    // 2. isbn + memberId 기준으로 중복 PENDING 신청 체크
+    // 3. 같은 isbn의 book_id별 PENDING 예약 수를 카운트
+    //    → 예약이 가장 적은 book_id에 배정 (균등 분산)
+    //    → 대여 가능한 권이 없어도 예약 가능
+    // 4. BookRequest 생성 후 저장
+    //
+    // [예시] 나루토 id 1(예약 2건), id 2(예약 0건) → id 2에 예약 배정
+    // ─────────────────────────────────────────────────────────────────
     /** 대출 신청 (회원) */
     @Override
     public void requestBook(BookRequestDTO dto) {
         Member member = memberRepository.findById(dto.getMemberId())
                 .orElseThrow(() -> new RuntimeException("회원 없음"));
 
-        Book book = bookRepository.findById(dto.getBookId())
+        // 프론트에서 넘어오는 bookId는 isbn 대표 row(min id)이므로
+        // 해당 isbn을 가져온 뒤, 균등 분산 로직으로 실제 권을 결정
+        Book representativeBook = bookRepository.findById(dto.getBookId())
                 .orElseThrow(() -> new RuntimeException("도서 없음"));
+        String isbn = representativeBook.getIsbn();
 
-        // 이미 PENDING 신청이 있으면 중복 신청 방지
-        if (bookRequestRepository.existsByBook_IdAndStatus(dto.getBookId(), RequestStatus.PENDING)) {
+        // 이미 같은 isbn에 PENDING 신청이 있으면 중복 신청 방지 (isbn 기준 체크)
+        if (bookRequestRepository.existsByBook_IsbnAndMember_IdAndStatus(isbn, dto.getMemberId(), RequestStatus.PENDING)) {
             throw new RuntimeException("이미 신청 중인 도서입니다.");
         }
 
+        // 같은 isbn의 book_id별 PENDING 예약 수를 조회해서 가장 적은 권에 배정
+        // countPendingPerBookByIsbn(): count 오름차순 → get(0)이 예약 가장 적은 권
+        // → 예약이 균등하게 분산됨 (대여 가능한 권이 없어도 예약 가능)
+        List<Object[]> counts = bookRequestRepository.countPendingPerBookByIsbn(isbn, RequestStatus.PENDING);
+        if (counts.isEmpty()) {
+            throw new RuntimeException("해당 도서를 찾을 수 없습니다.");
+        }
+        Long targetBookId = (Long) counts.get(0)[0]; // 예약 가장 적은 book_id
+        Book targetBook = bookRepository.findById(targetBookId)
+                .orElseThrow(() -> new RuntimeException("도서 없음"));
+
         BookRequest request = BookRequest.builder()
                 .member(member)
-                .book(book)
+                .book(targetBook)
                 .requestDate(LocalDate.now())
                 .status(RequestStatus.PENDING)
                 .build();
