@@ -129,11 +129,11 @@ public class NoticeController {
     public void read(Long nno, PageRequestDTO pageRequestDTO, Model model) {
         model.addAttribute("dto", noticeService.readOne(nno));
     }
-    @GetMapping("/modify")
+    /*@GetMapping("/modify")
     public String modifyGet(Long nno, RedirectAttributes redirectAttributes) {
         // 📍 권한이고 뭐고 무조건 목록으로 튕기게 작성
         log.info("!!!!!!!!!!!!!!!! 무조건 튕겨야 함 !!!!!!!!!!!!!!!!");
         return "redirect:/notice/list";
-    }
+    }*/
 
 }
