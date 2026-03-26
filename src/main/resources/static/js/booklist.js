@@ -173,6 +173,41 @@ document.querySelector('.list-group').addEventListener('click', function (e) {
         document.getElementById('detail-description').innerHTML = highlight(result.description || '책 소개가 없습니다.', listKeyword);
 
 
+        // ── 리스트 뱃지를 최신 상태로 동기화 ──────────────────────
+        // 모달 열 때 getBook() 응답이 최신이므로, 리스트 뱃지도 맞춰줌
+        // (예: 관리자가 예약 승인 → 예약중 뱃지를 대여중으로 교체)
+        if (loginInfo) {
+            const badgeWrap = document.getElementById(`badge-wrap-${currentBookId}`);
+            if (badgeWrap) {
+                // 기존 대여중/예약중 뱃지 제거
+                const infoBadge = badgeWrap.querySelector('.bg-info');
+                const warningBadge = badgeWrap.querySelector('.bg-warning');
+                if (infoBadge) infoBadge.remove();
+                if (warningBadge) warningBadge.remove();
+
+                // 최신 상태에 맞게 뱃지 추가
+                if (result.rentedByMe) {
+                    const badge = document.createElement('span');
+                    badge.className = 'badge bg-info text-dark';
+                    badge.textContent = '대여 중';
+                    badgeWrap.prepend(badge);
+                }
+                if (result.requestPending) {
+                    const badge = document.createElement('span');
+                    badge.className = 'badge bg-warning text-dark';
+                    badge.textContent = '예약 중';
+                    badgeWrap.prepend(badge);
+                }
+
+                // 대여 가능/불가 뱃지도 갱신
+                const statusBadge = badgeWrap.querySelector('.bg-success, .bg-secondary');
+                if (statusBadge) {
+                    statusBadge.className = result.status === 'AVAILABLE' ? 'badge bg-success' : 'badge bg-secondary';
+                    statusBadge.textContent = result.status === 'AVAILABLE' ? '대여 가능' : '대여 불가';
+                }
+            }
+        }
+
         // 대여 상태에 따라 뱃지 색상과 버튼 텍스트/스타일을 다르게 표시
         const statusEl = document.getElementById('detail-status');
         const actionBtn = document.getElementById('detail-action-btn');
@@ -315,10 +350,11 @@ document.querySelector('.clearBtn').addEventListener('click', function (e) {
 function clearSearch() {
     // 검색어 초기화
     document.querySelector('input[name="keyword"]').value = '';
-    document.querySelector('.dropdown-toggle').textContent = '정렬 기준';
+    // document.querySelector('.dropdown-toggle').textContent = '정렬 기준';
 
-    // 검색어 없이 1페이지로 서버에 요청
-    window.location.href = '/book/booklist';
+    // 검색어 없이 1페이지로 서버에 요청 (현재 sort 유지)
+    const sort = new URLSearchParams(window.location.search).get('sort') || '';
+    window.location.href = '/book/booklist?sort=' + sort;
 }
 
 async function insertRecomm(bookId) {
